@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🎥 Простой видеочат</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        input, button { padding: 10px; margin: 5px; }
+        video { width: 300px; border: 2px solid #333; }
+    </style>
+</head>
+<body>
+    <h1>🎥 Простой видеочат</h1>
+    
+    <input type="text" id="username" placeholder="Имя" value="User">
+    <input type="text" id="roomId" placeholder="Комната" value="room1">
+    <button onclick="connectToRoom()">Подключиться</button>
+    <button onclick="startVideo()" id="videoBtn" disabled>Включить камеру</button>
+    
+    <hr>
+    <video id="localVideo" autoplay muted playsinline></video>
+    <div id="remoteVideo"></div>
+    
+    <script>
+    // Минимальный рабочий код
+    let ws, localStream;
+    
+    async function connectToRoom() {
+        console.log('Кнопка нажата!');
+        
+        const username = document.getElementById('username').value;
+        const roomId = document.getElementById('roomId').value;
+        const clientId = 'user_' + Date.now();
+        
+        alert(`Подключаюсь как ${username} в комнату ${roomId}`);
+        
+        // Создаем WebSocket
+        ws = new WebSocket(`ws://${window.location.hostname}:8000/ws/${clientId}`);
+        
+        ws.onopen = () => {
+            console.log('✅ WebSocket подключен');
+            ws.send(JSON.stringify({
+                type: 'join',
+                room: roomId,
+                username: username
+            }));
+            
+            document.getElementById('videoBtn').disabled = false;
+        };
+        
+        ws.onmessage = (event) => {
+            console.log('Сервер:', event.data);
+        };
+    }
+    
+    async function startVideo() {
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+            });
+            document.getElementById('localVideo').srcObject = localStream;
+            alert('✅ Камера включена!');
+        } catch (error) {
+            alert('❌ Ошибка камеры: ' + error.message);
+        }
+    }
+    
+    console.log('✅ Страница загружена');
+    </script>
+</body>
+</html>
+        function updateUI() {
+            // Enable chat input on Enter
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // Auto-select first camera/microphone if available
+            setTimeout(() => {
+                const cameraSelect = document.getElementById('cameraSelect');
+                const audioSelect = document.getElementById('audioSelect');
+                
+                if (cameraSelect.options.length > 1 && !cameraSelect.value) {
+                    cameraSelect.selectedIndex = 1;
+                }
+                
+                if (audioSelect.options.length > 1 && !audioSelect.value) {
+                    audioSelect.selectedIndex = 1;
+                }
+            }, 1000);
+        }
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (ws) {
+                ws.close();
+            }
+            stopVideo();
+        });
+    </script>
+</body>
+</html>
